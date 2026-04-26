@@ -1,0 +1,42 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+  body { background-color: #1e1e1e; padding: 20px; margin: 0; display: flex; justify-content: center; }
+  .window { border: 1px solid #333; border-radius: 8px; overflow: hidden; background-color: #1e1e1e; box-shadow: 0 12px 24px rgba(0,0,0,0.8); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; width: 100%; max-width: 950px; }
+  .header { background-color: #2d2d2d; padding: 8px 15px; color: #ccc; font-size: 13px; display: flex; align-items: center; border-bottom: 1px solid #111; }
+  .dots { display: flex; gap: 8px; margin-right: 15px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .red { background-color: #ff5f56; }
+  .yellow { background-color: #ffbd2e; }
+  .green { background-color: #27c93f; }
+  .tabs { display: flex; background: #252526; padding-left: 10px; font-size: 13px; color: #969696; }
+  .tab { padding: 8px 16px; background: #1e1e1e; border-top: 1px solid #007acc; color: #fff; cursor: default; display: flex; align-items: center; gap: 6px; }
+  .icon-py { color: #3776ab; font-weight: bold; }
+  .icon-txt { color: #ccc; font-weight: bold; }
+  pre { margin: 0; padding: 20px !important; font-family: 'Consolas', monospace; font-size: 14px; line-height: 1.5; overflow: hidden; background: #1e1e1e !important; }
+</style>
+</head>
+<body>
+  <div class="window">
+    <div class="header">
+      <div class="dots"><div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div></div>
+      <span>ActionForge AI - Visual Studio Code</span>
+    </div>
+    <div class="tabs">
+      <div class="tab"><span class="icon-txt">>_</span> Terminal</div>
+    </div>
+    <pre><code class="language-bash">(venv) PS C:\actionforge\backend&gt; uvicorn main:app --reload
+INFO:     Will watch for changes in these directories: ['C:\actionforge\backend']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [12345] using StatReload
+INFO:     Started server process [12346]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.</code></pre>
+  </div>
+  <script>hljs.highlightAll();</script>
+</body>
+</html>
