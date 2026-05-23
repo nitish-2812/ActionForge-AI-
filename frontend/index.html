@@ -1,0 +1,2007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ActionForge AI — Meeting Notes to Strategy Engine</title>
+  <meta name="description" content="Convert unstructured sales meeting notes into structured action plans using an AI tool pipeline with session memory." />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+  </style>
+
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            base: '#0a0a0f',
+            surface: '#111118',
+            card: '#16161f',
+            input: '#1a1a28',
+            accent: '#f97316',
+            'accent-deep': '#ea580c',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Space Grotesk', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+
+  <style>
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0a0a0f; }
+    ::-webkit-scrollbar-thumb { background: #f9731644; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #f97316aa; }
+
+    /* ── Background glow ── */
+    .hero-glow {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      filter: blur(160px);
+      opacity: 0.15;
+      pointer-events: none;
+      animation: pulseGlow 6s ease-in-out infinite alternate;
+    }
+    .glow-1 { background: #f97316; top: -200px; left: -100px; }
+    .glow-2 { background: #7c3aed; top: -100px; right: -200px; animation-delay: 3s; }
+    .glow-3 { background: #f97316; bottom: -300px; left: 50%; transform: translateX(-50%); animation-delay: 1.5s; }
+
+    @keyframes pulseGlow {
+      0% { opacity: 0.10; transform: scale(1); }
+      100% { opacity: 0.20; transform: scale(1.15); }
+    }
+
+    /* ── Fade-in animation ── */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(24px);
+      animation: fadeUp 0.6s ease-out forwards;
+    }
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Stagger delays ── */
+    .delay-100 { animation-delay: 0.1s; }
+    .delay-200 { animation-delay: 0.2s; }
+    .delay-300 { animation-delay: 0.3s; }
+    .delay-400 { animation-delay: 0.4s; }
+    .delay-500 { animation-delay: 0.5s; }
+
+    /* ── Loading bar ── */
+    .loading-bar {
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #f97316, transparent);
+      animation: loadSlide 1.5s ease-in-out infinite;
+    }
+    @keyframes loadSlide {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    /* ── Tool step indicator ── */
+    .tool-step { transition: all 0.3s ease; }
+    .tool-step.active { color: #f97316; }
+    .tool-step.done { color: #22c55e; }
+    .tool-step .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #333; transition: all 0.3s ease;
+    }
+    .tool-step.active .dot { background: #f97316; box-shadow: 0 0 8px #f97316; }
+    .tool-step.done .dot { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+
+    /* ── Toast ── */
+    .toast {
+      animation: slideInRight 0.3s ease-out, fadeOutRight 0.3s ease-in 3.7s forwards;
+    }
+    @keyframes slideInRight {
+      from { transform: translateX(120%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes fadeOutRight {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(120%); opacity: 0; }
+    }
+
+    /* ── Priority / urgency pills ── */
+    .pill-high { background: #dc262622; color: #f87171; border: 1px solid #dc262644; }
+    .pill-medium { background: #f9731622; color: #fb923c; border: 1px solid #f9731644; }
+    .pill-low { background: #22c55e22; color: #4ade80; border: 1px solid #22c55e44; }
+    .pill-immediate { background: #dc262622; color: #f87171; border: 1px solid #dc262644; }
+    .pill-soon { background: #f9731622; color: #fb923c; border: 1px solid #f9731644; }
+    .pill-flexible { background: #22c55e22; color: #4ade80; border: 1px solid #22c55e44; }
+
+    /* ── Modal backdrop ── */
+    .modal-overlay {
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(8px);
+    }
+
+    /* ── Smooth scroll ── */
+    html { scroll-behavior: smooth; }
+
+    /* ── Textarea ── */
+    textarea:focus { outline: none; }
+
+    /* ── Bounce arrow ── */
+    .bounce-arrow { animation: bounceDown 2s ease-in-out infinite; }
+    @keyframes bounceDown {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(8px); }
+    }
+
+    /* ── Card hover ── */
+    .result-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .result-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(249, 115, 22, 0.08);
+    }
+
+    /* ── Avatar colors ── */
+    .avatar-colors {
+      --colors: #f97316, #8b5cf6, #06b6d4, #ec4899, #22c55e, #eab308;
+    }
+  </style>
+
+  <!-- Chart.js for analytics visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+</head>
+
+<body class="bg-base text-gray-200 font-sans min-h-screen relative overflow-x-hidden">
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- TOAST CONTAINER                                               -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <div id="toast-container" class="fixed top-20 right-4 z-[100] flex flex-col gap-3"></div>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- AUTH MODAL (Login/Register)                                   -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <div id="auth-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center modal-overlay">
+    <div class="bg-card border border-white/10 rounded-2xl p-8 max-w-md w-full mx-4">
+      <h2 id="auth-title" class="font-display text-2xl font-bold text-white mb-6">Login</h2>
+      
+      <div id="login-form" class="space-y-4">
+        <input type="email" id="login-email" placeholder="Email" class="w-full bg-input border border-orange-500/20 rounded-lg px-4 py-2.5 text-gray-200 placeholder-gray-600 focus:outline-none focus:border-orange-500/50" />
+        <input type="password" id="login-password" placeholder="Password" class="w-full bg-input border border-orange-500/20 rounded-lg px-4 py-2.5 text-gray-200 placeholder-gray-600 focus:outline-none focus:border-orange-500/50" />
+        <button onclick="loginUser()" class="w-full bg-accent hover:bg-accent-deep text-white font-bold py-2.5 rounded-lg transition-all">Login</button>
+        <p class="text-center text-sm text-gray-400">
+          Don't have an account? 
+          <button onclick="toggleAuthMode()" class="text-accent hover:text-accent-deep transition-colors">Register</button>
+        </p>
+      </div>
+      
+      <div id="register-form" class="hidden space-y-4">
+        <input type="email" id="register-email" placeholder="Email" class="w-full bg-input border border-orange-500/20 rounded-lg px-4 py-2.5 text-gray-200 placeholder-gray-600 focus:outline-none focus:border-orange-500/50" />
+        <input type="text" id="register-username" placeholder="Username" class="w-full bg-input border border-orange-500/20 rounded-lg px-4 py-2.5 text-gray-200 placeholder-gray-600 focus:outline-none focus:border-orange-500/50" />
+        <input type="password" id="register-password" placeholder="Password" class="w-full bg-input border border-orange-500/20 rounded-lg px-4 py-2.5 text-gray-200 placeholder-gray-600 focus:outline-none focus:border-orange-500/50" />
+        <button onclick="registerUser()" class="w-full bg-accent hover:bg-accent-deep text-white font-bold py-2.5 rounded-lg transition-all">Register</button>
+        <p class="text-center text-sm text-gray-400">
+          Already have an account? 
+          <button onclick="toggleAuthMode()" class="text-accent hover:text-accent-deep transition-colors">Login</button>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- NAVBAR                                                        -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-base/90 backdrop-blur-xl border-b border-orange-500/20">
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <!-- Logo -->
+      <div class="flex items-center gap-2">
+        <span class="text-2xl">🔥</span>
+        <span class="font-display text-xl font-bold text-white">Action<span class="text-accent">Forge</span></span>
+        <span class="text-[10px] font-semibold bg-accent/15 text-accent px-1.5 py-0.5 rounded-full ml-1 uppercase tracking-widest">AI</span>
+      </div>
+      <!-- User & Memory -->
+      <div id="nav-right" class="flex items-center gap-6">
+        <!-- Memory Indicator -->
+        <div id="nav-memory" class="flex items-center gap-2 text-sm">
+          <span id="nav-memory-dot" class="w-2 h-2 rounded-full bg-gray-600 transition-colors"></span>
+          <span id="nav-memory-label" class="text-gray-500">No Memory</span>
+        </div>
+        <!-- User Info -->
+        <div id="user-info" class="hidden flex items-center gap-3">
+          <span id="user-name" class="text-sm text-gray-300"></span>
+          <button onclick="logoutUser()" class="text-xs font-medium text-gray-400 hover:text-accent transition-colors">Logout</button>
+        </div>
+        <!-- Auth Buttons -->
+        <div id="auth-buttons" class="flex gap-2">
+          <button onclick="showAuthModal('login')" class="text-sm font-medium text-gray-300 hover:text-accent transition-colors">Login</button>
+          <button onclick="showAuthModal('register')" class="text-sm font-medium bg-accent/15 text-accent px-3 py-1 rounded-lg hover:bg-accent/25 transition-colors">Register</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- HERO                                                          -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section class="relative pt-32 pb-20 px-6 overflow-hidden min-h-[82vh]">
+    <div class="hero-glow glow-1"></div>
+    <div class="hero-glow glow-2"></div>
+
+    <div class="max-w-4xl mx-auto text-center relative z-10">
+
+      <h1 class="font-display text-5xl md:text-7xl font-bold leading-tight mb-6">
+        Turn Meeting Chaos<br />
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-accent to-amber-400">Into Actionable Strategy</span>
+      </h1>
+      <p class="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+        Paste your meeting notes. ActionForge AI extracts tasks, deadlines, assignments, and drafts a follow-up email — all using a multi-step AI analysis pipeline with session memory.
+      </p>
+      <a href="#input-section" class="bounce-arrow inline-block text-gray-600 hover:text-accent transition-colors">
+        <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      </a>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- INPUT SECTION                                                 -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section id="input-section" class="relative px-6 pb-16">
+    <div class="hero-glow glow-3"></div>
+
+    <div class="max-w-7xl mx-auto grid md:grid-cols-5 gap-6 relative z-10">
+
+      <!-- Left: Textarea (3 cols) -->
+      <div class="md:col-span-3">
+        <label class="block text-sm font-semibold text-gray-300 mb-2 tracking-wide uppercase">Meeting Notes</label>
+        <textarea
+          id="meeting-notes"
+          rows="16"
+          class="w-full bg-input border border-orange-500/20 rounded-2xl p-5 text-gray-200 text-sm leading-relaxed resize-none placeholder-gray-600 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all"
+          placeholder="Paste your meeting notes here...
+
+Example:
+Weekly sync April 18 2026. Ravi to finalize Q2 proposal ASAP. Priya needs demo environment set up by end of week. Team agreed to follow up with Acme Corp next Tuesday. Budget approval needed from manager Sarah before Friday. John to prepare competitor analysis by next Monday."
+        ></textarea>
+      </div>
+
+      <!-- Right: Control Card (2 cols) -->
+      <div class="md:col-span-2 flex flex-col gap-4">
+
+        <!-- Date Input -->
+        <div class="bg-card border border-white/5 rounded-2xl p-5">
+          <label class="block text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">Meeting Date</label>
+          <input
+            id="meeting-date"
+            type="date"
+            class="w-full bg-input border border-orange-500/20 rounded-xl px-4 py-2.5 text-gray-200 text-sm focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all"
+          />
+        </div>
+
+        <!-- Audio Upload -->
+        <div class="bg-card border border-white/5 rounded-2xl p-5">
+          <label class="block text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wider">🎙️ Audio Upload</label>
+          <div
+            id="audio-dropzone"
+            class="border-2 border-dashed border-orange-500/30 rounded-xl p-4 text-center cursor-pointer hover:border-orange-500/50 hover:bg-orange-500/5 transition-all"
+            ondrop="handleAudioDrop(event)"
+            ondragover="handleAudioDragOver(event)"
+            ondragleave="handleAudioDragLeave(event)"
+          >
+            <svg class="w-6 h-6 mx-auto mb-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            <p class="text-xs text-gray-500 mb-2">Drag audio file or <span class="text-accent">click to upload</span></p>
+            <input
+              id="audio-input"
+              type="file"
+              accept="audio/mp3,audio/mpeg,audio/wav,audio/webm,audio/m4a,.mp3,.wav,.webm,.m4a"
+              class="hidden"
+              onchange="handleAudioUpload(event)"
+            />
+            <button
+              type="button"
+              onclick="document.getElementById('audio-input').click()"
+              class="text-xs font-medium text-gray-400 hover:text-accent transition-colors"
+            >
+              Select File
+            </button>
+          </div>
+          <div id="audio-status" class="mt-2 text-xs text-gray-500"></div>
+        </div>
+
+        <!-- Memory Status -->
+        <div class="bg-card border border-white/5 rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Session Memory</span>
+            <button id="clear-memory-btn" onclick="clearMemory()" class="text-xs font-medium text-[#ef4444] bg-transparent border border-[rgba(239,68,68,0.4)] rounded-[6px] px-3 py-1 cursor-pointer transition-all duration-200 hover:bg-[rgba(239,68,68,0.08)] hover:border-[rgba(239,68,68,0.6)] hidden">
+              Clear Memory
+            </button>
+          </div>
+          <div id="memory-status" class="flex items-center gap-2 text-sm">
+            <span class="w-2 h-2 rounded-full bg-gray-600"></span>
+            <span class="text-gray-500">No previous context</span>
+          </div>
+        </div>
+
+        <!-- How It Works -->
+        <div class="bg-card border border-white/5 rounded-2xl p-5 flex-1">
+          <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">HOW IT WORKS</span>
+          <div class="mt-4 space-y-3" id="tool-pipeline-static">
+            <div class="flex items-center gap-3 text-sm text-gray-500">
+              <span class="w-5 h-5 flex items-center justify-center rounded-md bg-white/5 text-[10px] font-bold text-gray-400">1</span>
+              <span>Notes received & context loaded</span>
+            </div>
+            <div class="flex items-center gap-3 text-sm text-gray-500">
+              <span class="w-5 h-5 flex items-center justify-center rounded-md bg-white/5 text-[10px] font-bold text-gray-400">2</span>
+              <span>Summary tool called</span>
+            </div>
+            <div class="flex items-center gap-3 text-sm text-gray-500">
+              <span class="w-5 h-5 flex items-center justify-center rounded-md bg-white/5 text-[10px] font-bold text-gray-400">3</span>
+              <span>Task extractor tool called</span>
+            </div>
+            <div class="flex items-center gap-3 text-sm text-gray-500">
+              <span class="w-5 h-5 flex items-center justify-center rounded-md bg-white/5 text-[10px] font-bold text-gray-400">4</span>
+              <span>Deadline detector tool called</span>
+            </div>
+            <div class="flex items-center gap-3 text-sm text-gray-500">
+              <span class="w-5 h-5 flex items-center justify-center rounded-md bg-white/5 text-[10px] font-bold text-gray-400">5</span>
+              <span>Role assigner tool called</span>
+            </div>
+            <div class="flex items-center gap-3 text-sm text-gray-500">
+              <span class="w-5 h-5 flex items-center justify-center rounded-md bg-white/5 text-[10px] font-bold text-gray-400">6</span>
+              <span>Email generator tool called</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Generate Button -->
+        <button
+          id="generate-btn"
+          onclick="generatePlan()"
+          class="w-full bg-gradient-to-r from-accent to-amber-500 hover:from-accent-deep hover:to-amber-600 text-white font-display font-bold text-lg py-4 rounded-2xl transition-all shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          ⚡ Generate Action Plan
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- LOADING STATE                                                 -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section id="loading-section" class="hidden px-6 pb-16">
+    <div class="max-w-3xl mx-auto">
+      <div class="bg-card border border-white/5 rounded-2xl p-8">
+        <!-- Loading bar -->
+        <div class="w-full overflow-hidden rounded-full mb-8">
+          <div class="loading-bar w-full rounded-full"></div>
+        </div>
+        <!-- Tool steps -->
+        <div class="space-y-4" id="tool-steps">
+          <div class="tool-step flex items-center gap-3 text-sm text-gray-600" data-step="0">
+            <span class="dot"></span>
+            <span>Loading context from memory...</span>
+          </div>
+          <div class="tool-step flex items-center gap-3 text-sm text-gray-600" data-step="1">
+            <span class="dot"></span>
+            <span>Generating meeting summary...</span>
+          </div>
+          <div class="tool-step flex items-center gap-3 text-sm text-gray-600" data-step="2">
+            <span class="dot"></span>
+            <span>Extracting action items...</span>
+          </div>
+          <div class="tool-step flex items-center gap-3 text-sm text-gray-600" data-step="3">
+            <span class="dot"></span>
+            <span>Detecting deadlines...</span>
+          </div>
+          <div class="tool-step flex items-center gap-3 text-sm text-gray-600" data-step="4">
+            <span class="dot"></span>
+            <span>Assigning roles...</span>
+          </div>
+          <div class="tool-step flex items-center gap-3 text-sm text-gray-600" data-step="5">
+            <span class="dot"></span>
+            <span>Drafting follow-up email...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- OUTPUT SECTION                                                -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section id="output-section" class="hidden px-6 pb-24">
+    <div class="max-w-7xl mx-auto space-y-6">
+
+      <!-- Section heading -->
+      <div class="flex items-center gap-3 mb-6 fade-up">
+        <div class="w-1 h-8 rounded-full bg-gradient-to-b from-accent to-amber-400"></div>
+        <h2 class="font-display text-2xl font-bold text-white">Action Plan Results</h2>
+      </div>
+
+      <!-- TAB NAVIGATION -->
+      <div class="flex gap-2 overflow-x-auto pb-4 border-b border-white/10 fade-up">
+        <button onclick="switchTab('summary')" class="result-tab active px-4 py-2 text-sm font-semibold text-white border-b-2 border-accent whitespace-nowrap transition-all" data-tab="summary">
+          📋 Summary
+        </button>
+        <button onclick="switchTab('tasks')" class="result-tab px-4 py-2 text-sm font-semibold text-gray-400 border-b-2 border-transparent hover:text-gray-300 whitespace-nowrap transition-all" data-tab="tasks">
+          ✓ Action Items
+        </button>
+        <button onclick="switchTab('deadlines')" class="result-tab px-4 py-2 text-sm font-semibold text-gray-400 border-b-2 border-transparent hover:text-gray-300 whitespace-nowrap transition-all" data-tab="deadlines">
+          ⏰ Deadlines
+        </button>
+        <button onclick="switchTab('assigned')" class="result-tab px-4 py-2 text-sm font-semibold text-gray-400 border-b-2 border-transparent hover:text-gray-300 whitespace-nowrap transition-all" data-tab="assigned">
+          👥 Role Assignments
+        </button>
+        <button onclick="switchTab('email')" class="result-tab px-4 py-2 text-sm font-semibold text-gray-400 border-b-2 border-transparent hover:text-gray-300 whitespace-nowrap transition-all" data-tab="email">
+          ✉️ Follow-up Email
+        </button>
+      </div>
+
+      <!-- Card 1: Summary -->
+      <div class="result-card result-tab-content bg-card border border-white/5 rounded-2xl p-6 border-l-4 border-l-accent fade-up delay-100" id="card-summary" data-tab="summary">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-display text-lg font-semibold text-white flex items-center gap-2">
+            <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Meeting Summary
+          </h3>
+          <span id="memory-badge" class="hidden text-[11px] font-semibold bg-green-500/15 text-green-400 border border-green-500/20 rounded-full px-3 py-1">Memory Used</span>
+        </div>
+        <p id="summary-text" class="text-gray-300 leading-relaxed"></p>
+      </div>
+
+      <!-- Card 2: Tasks -->
+      <div class="result-card result-tab-content bg-card border border-white/5 rounded-2xl p-6 fade-up delay-200 hidden" id="card-tasks" data-tab="tasks">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-display text-lg font-semibold text-white flex items-center gap-2">
+            <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+            Action Items
+          </h3>
+          <span id="task-count" class="text-xs font-bold bg-accent/15 text-accent rounded-full px-2.5 py-1"></span>
+        </div>
+
+        <!-- Task Filters -->
+        <div class="mb-4 flex flex-wrap gap-2">
+          <input type="text" id="task-search" placeholder="Search tasks..." class="flex-1 min-w-[150px] bg-input border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:border-accent/50 focus:outline-none transition-all" oninput="filterTasks()">
+          <select id="priority-filter" class="bg-input border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-200 focus:border-accent/50 focus:outline-none transition-all cursor-pointer" onchange="filterTasks()">
+            <option value="">All Priorities</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
+          <select id="owner-filter" class="bg-input border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-200 focus:border-accent/50 focus:outline-none transition-all cursor-pointer" onchange="filterTasks()">
+            <option value="">All Owners</option>
+          </select>
+          <button onclick="clearFilters()" class="bg-input border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-400 hover:text-gray-200 hover:border-accent/30 transition-all">Clear</button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-gray-500 border-b border-white/5">
+                <th class="pb-3 font-medium">#</th>
+                <th class="pb-3 font-medium">Task</th>
+                <th class="pb-3 font-medium">Owner</th>
+                <th class="pb-3 font-medium text-right">Priority</th>
+              </tr>
+            </thead>
+            <tbody id="tasks-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Card 3: Deadlines -->
+      <div class="result-card result-tab-content bg-card border border-white/5 rounded-2xl p-6 fade-up delay-300 hidden" id="card-deadlines" data-tab="deadlines">
+        <h3 class="font-display text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Deadlines
+        </h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-gray-500 border-b border-white/5">
+                <th class="pb-3 font-medium">Item</th>
+                <th class="pb-3 font-medium">Deadline</th>
+                <th class="pb-3 font-medium text-right">Urgency</th>
+              </tr>
+            </thead>
+            <tbody id="deadlines-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Card 4: Role Assignments -->
+      <div class="result-card result-tab-content bg-card border border-white/5 rounded-2xl p-6 fade-up delay-400 hidden" id="card-assigned" data-tab="assigned">
+        <h3 class="font-display text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          Role Assignments
+        </h3>
+        <div id="assigned-list" class="grid gap-3 sm:grid-cols-2"></div>
+      </div>
+
+      <!-- Card 5: Follow-up Email -->
+      <div class="result-card result-tab-content bg-card border border-white/5 rounded-2xl p-6 fade-up delay-500 hidden" id="card-email" data-tab="email">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-display text-lg font-semibold text-white flex items-center gap-2">
+            <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            Follow-up Email
+          </h3>
+          <button id="copy-email-btn" onclick="copyEmail()" class="flex items-center gap-1.5 text-xs font-semibold bg-accent/15 text-accent border border-accent/20 rounded-lg px-3 py-1.5 hover:bg-accent/25 transition-colors">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            <span id="copy-btn-text">Copy Email</span>
+          </button>
+        </div>
+        <pre id="email-text" class="bg-input border border-white/5 rounded-xl p-5 text-sm text-gray-300 leading-relaxed whitespace-pre-wrap font-mono overflow-x-auto"></pre>
+      </div>
+
+      <!-- Bottom Actions -->
+      <div class="flex flex-wrap gap-4 pt-4 fade-up delay-500">
+        <button onclick="resetAll()" class="flex items-center gap-2 bg-card border border-white/10 text-gray-300 font-semibold px-6 py-3 rounded-xl hover:border-accent/30 hover:text-white transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          Generate Another
+        </button>
+        <button onclick="showMemoryModal()" class="flex items-center gap-2 bg-card border border-white/10 text-gray-300 font-semibold px-6 py-3 rounded-xl hover:border-accent/30 hover:text-white transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
+          View Memory
+        </button>
+        <button onclick="exportPDF()" class="flex items-center gap-2 bg-card border border-white/10 text-gray-300 font-semibold px-6 py-3 rounded-xl hover:border-accent/30 hover:text-white transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+          Export PDF
+        </button>
+        <button onclick="exportCSV()" class="flex items-center gap-2 bg-card border border-white/10 text-gray-300 font-semibold px-6 py-3 rounded-xl hover:border-accent/30 hover:text-white transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Export CSV
+        </button>
+        <button onclick="showAnalyticsDashboard()" class="flex items-center gap-2 bg-card border border-white/10 text-gray-300 font-semibold px-6 py-3 rounded-xl hover:border-accent/30 hover:text-white transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          Analytics
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- MEMORY MODAL                                                  -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <div id="memory-modal" class="hidden fixed inset-0 z-[90] flex items-center justify-center modal-overlay">
+    <div class="bg-surface border border-white/10 rounded-2xl max-w-2xl w-full mx-6 max-h-[80vh] overflow-y-auto shadow-2xl">
+      <div class="flex items-center justify-between p-6 border-b border-white/5">
+        <h3 class="font-display text-lg font-bold text-white">Session Memory</h3>
+        <button onclick="closeMemoryModal()" class="text-gray-500 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="memory-modal-content" class="p-6 space-y-4">
+        <p class="text-gray-500 text-sm">Loading...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- ANALYTICS DASHBOARD MODAL                                     -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <div id="analytics-modal" class="hidden fixed inset-0 z-[90] flex items-center justify-center modal-overlay">
+    <div class="bg-surface border border-white/10 rounded-2xl max-w-6xl w-full mx-6 max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div class="flex items-center justify-between p-6 border-b border-white/5 sticky top-0 bg-surface">
+        <h3 class="font-display text-lg font-bold text-white">Analytics Dashboard</h3>
+        <button onclick="closeAnalyticsDashboard()" class="text-gray-500 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="analytics-content" class="p-6">
+        <!-- Metrics Row -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div class="bg-card border border-white/5 rounded-xl p-4">
+            <p class="text-gray-400 text-sm font-semibold">Total Meetings</p>
+            <p id="metric-meetings" class="text-3xl font-bold text-accent mt-2">0</p>
+          </div>
+          <div class="bg-card border border-white/5 rounded-xl p-4">
+            <p class="text-gray-400 text-sm font-semibold">Avg Tasks/Meeting</p>
+            <p id="metric-avg-tasks" class="text-3xl font-bold text-accent mt-2">0</p>
+          </div>
+          <div class="bg-card border border-white/5 rounded-xl p-4">
+            <p class="text-gray-400 text-sm font-semibold">Total Tasks</p>
+            <p id="metric-total-tasks" class="text-3xl font-bold text-accent mt-2">0</p>
+          </div>
+          <div class="bg-card border border-white/5 rounded-xl p-4">
+            <p class="text-gray-400 text-sm font-semibold">Top Assignee</p>
+            <p id="metric-top-assignee" class="text-lg font-bold text-gray-200 mt-2 truncate">-</p>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-card border border-white/5 rounded-xl p-6">
+            <h4 class="font-semibold text-white mb-4">Priority Distribution</h4>
+            <canvas id="priority-chart"></canvas>
+          </div>
+          <div class="bg-card border border-white/5 rounded-xl p-6">
+            <h4 class="font-semibold text-white mb-4">Urgency Distribution</h4>
+            <canvas id="urgency-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- Assignee Chart -->
+        <div class="bg-card border border-white/5 rounded-xl p-6 mt-6">
+          <h4 class="font-semibold text-white mb-4">Top Assignees</h4>
+          <canvas id="assignee-chart"></canvas>
+        </div>
+
+        <!-- Meeting Timeline -->
+        <div class="bg-card border border-white/5 rounded-xl p-6 mt-6">
+          <h4 class="font-semibold text-white mb-4">Meeting Timeline</h4>
+          <div id="timeline-list" class="space-y-2 max-h-64 overflow-y-auto">
+            <p class="text-gray-500 text-sm">No meetings yet</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- FOOTER                                                        -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <footer class="border-t border-white/5 py-8 px-6 text-center">
+    <p class="text-gray-600 text-sm">
+      ActionForge AI © 2026
+    </p>
+  </footer>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- JAVASCRIPT                                                    -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <script>
+    // ── Config ──
+    const API_BASE = "http://localhost:8000";
+
+    // ── Avatar color palette ──
+    const AVATAR_COLORS = ["#f97316", "#8b5cf6", "#06b6d4", "#ec4899", "#22c55e", "#eab308", "#3b82f6", "#ef4444"];
+
+    /**
+     * Get a deterministic color for a person's avatar based on their name.
+     */
+    function getAvatarColor(name) {
+      let hash = 0;
+      for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+    }
+
+    /**
+     * Get the priority pill CSS class.
+     */
+    function getPriorityClass(priority) {
+      const p = (priority || "").toLowerCase();
+      if (p.includes("high")) return "pill-high";
+      if (p.includes("medium")) return "pill-medium";
+      return "pill-low";
+    }
+
+    /**
+     * Get the urgency pill CSS class.
+     */
+    function getUrgencyClass(urgency) {
+      const u = (urgency || "").toLowerCase();
+      if (u.includes("immediate")) return "pill-immediate";
+      if (u.includes("soon")) return "pill-soon";
+      return "pill-flexible";
+    }
+
+    /**
+     * Show a toast notification.
+     * @param {string} message - Toast message text.
+     * @param {"success"|"error"|"info"} type - Toast type.
+     */
+    function showToast(message, type = "info") {
+      const container = document.getElementById("toast-container");
+      const colors = {
+        success: "border-green-500 bg-green-500/10 text-green-300",
+        error: "border-red-500 bg-red-500/10 text-red-300",
+        info: "border-accent bg-accent/10 text-orange-300",
+      };
+      const icons = {
+        success: "✓",
+        error: "✕",
+        info: "ℹ",
+      };
+      const toast = document.createElement("div");
+      toast.className = `toast border-l-4 ${colors[type]} rounded-xl px-5 py-3 text-sm font-medium shadow-xl backdrop-blur-md flex items-center gap-3`;
+      toast.innerHTML = `<span class="text-lg">${icons[type]}</span><span>${message}</span>`;
+      container.appendChild(toast);
+      // Remove from DOM after animation
+      setTimeout(() => toast.remove(), 4200);
+    }
+
+    /**
+     * Check backend memory status and update indicators.
+     */
+    async function checkMemory() {
+      try {
+        const res = await fetch(`${API_BASE}/memory`);
+        if (!res.ok) throw new Error("Memory check failed");
+        const data = await res.json();
+        const count = data.count || 0;
+
+        const dot = document.getElementById("nav-memory-dot");
+        const label = document.getElementById("nav-memory-label");
+        const statusDiv = document.getElementById("memory-status");
+        const clearBtn = document.getElementById("clear-memory-btn");
+
+        if (count > 0) {
+          dot.className = "w-2 h-2 rounded-full bg-green-400 shadow shadow-green-400/50 transition-colors";
+          label.className = "text-green-400 text-sm";
+          label.textContent = `Memory Active (${count})`;
+          statusDiv.innerHTML = `
+            <span class="w-2 h-2 rounded-full bg-green-400 shadow shadow-green-400/50"></span>
+            <span class="text-green-400">Memory Active — using context from ${count} previous meeting${count > 1 ? "s" : ""}</span>
+          `;
+          clearBtn.classList.remove("hidden");
+        } else {
+          dot.className = "w-2 h-2 rounded-full bg-gray-600 transition-colors";
+          label.className = "text-gray-500 text-sm";
+          label.textContent = "No Memory";
+          statusDiv.innerHTML = `
+            <span class="w-2 h-2 rounded-full bg-gray-600"></span>
+            <span class="text-gray-500">No previous context</span>
+          `;
+          clearBtn.classList.add("hidden");
+        }
+      } catch (e) {
+        // Backend may not be running yet — fail silently
+        console.log("Memory check skipped (backend might be offline):", e.message);
+      }
+    }
+
+    /**
+     * Run the animated tool step progress simulation.
+     * @param {AbortSignal} signal - Abort signal to cancel the animation.
+     */
+    function animateToolSteps(signal) {
+      const steps = document.querySelectorAll("#tool-steps .tool-step");
+      const delays = [0, 800, 2000, 3500, 5000, 7000];
+
+      steps.forEach((step, i) => {
+        step.className = "tool-step flex items-center gap-3 text-sm text-gray-600";
+      });
+
+      delays.forEach((delay, i) => {
+        setTimeout(() => {
+          if (signal && signal.aborted) return;
+          // Mark previous steps as done
+          for (let j = 0; j < i; j++) {
+            steps[j].classList.remove("active");
+            steps[j].classList.add("done");
+          }
+          // Mark current step as active
+          steps[i].classList.add("active");
+        }, delay);
+      });
+    }
+
+    /**
+     * Animate the static pipeline steps in the right card one by one.
+     */
+    let pipelineTimeouts = [];
+    function animatePipelineSteps() {
+      pipelineTimeouts.forEach(id => clearTimeout(id));
+      pipelineTimeouts = [];
+      const container = document.getElementById('tool-pipeline-static');
+      const steps = container.children;
+      const delays = [0, 800, 1600, 2400, 3200, 4000];
+      for (let i = 0; i < steps.length && i < delays.length; i++) {
+        const id = setTimeout(() => {
+          const step = steps[i];
+          const numSpan = step.children[0];
+          const textSpan = step.children[1];
+          numSpan.style.transition = 'all 0.3s ease';
+          numSpan.style.backgroundColor = '#f97316';
+          numSpan.style.color = 'white';
+          textSpan.style.transition = 'all 0.3s ease';
+          textSpan.style.color = 'white';
+          textSpan.style.fontWeight = '500';
+          if (!step.querySelector('.pipeline-check')) {
+            const check = document.createElement('span');
+            check.className = 'pipeline-check';
+            check.style.color = '#f97316';
+            check.style.marginLeft = '6px';
+            check.style.transition = 'all 0.3s ease';
+            check.textContent = '✓';
+            step.appendChild(check);
+          }
+        }, delays[i]);
+        pipelineTimeouts.push(id);
+      }
+    }
+
+    /**
+     * Reset the static pipeline steps back to inactive gray state.
+     */
+    function resetPipelineSteps() {
+      pipelineTimeouts.forEach(id => clearTimeout(id));
+      pipelineTimeouts = [];
+      const container = document.getElementById('tool-pipeline-static');
+      const steps = container.children;
+      for (let i = 0; i < steps.length; i++) {
+        const step = steps[i];
+        const numSpan = step.children[0];
+        const textSpan = step.children[1];
+        numSpan.style.backgroundColor = '';
+        numSpan.style.color = '';
+        textSpan.style.color = '';
+        textSpan.style.fontWeight = '';
+        const check = step.querySelector('.pipeline-check');
+        if (check) check.remove();
+      }
+    }
+
+    /**
+     * Main function: process meeting notes through the AI pipeline.
+     */
+    async function generatePlan() {
+      const notes = document.getElementById("meeting-notes").value.trim();
+      const date = document.getElementById("meeting-date").value;
+      const btn = document.getElementById("generate-btn");
+      const loadingSection = document.getElementById("loading-section");
+      const outputSection = document.getElementById("output-section");
+
+      // Validate
+      if (notes.length < 20) {
+        showToast("Please enter at least 20 characters of meeting notes.", "error");
+        return;
+      }
+
+      // Show loading, hide output
+      btn.disabled = true;
+      btn.innerHTML = `<span class="flex items-center justify-center gap-2"><svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Analyzing with AI···</span>`;
+      outputSection.classList.add("hidden");
+      loadingSection.classList.remove("hidden");
+      loadingSection.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      // Animate static pipeline steps in the right card
+      animatePipelineSteps();
+
+      // Start tool step animation
+      const abortController = new AbortController();
+      animateToolSteps(abortController.signal);
+
+      try {
+        const res = await fetch(`${API_BASE}/process_notes`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ notes, meeting_date: date }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ detail: "Unknown error" }));
+          throw new Error(err.detail || `Server error: ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        // Stop animation
+        abortController.abort();
+
+        // Mark all steps as done
+        document.querySelectorAll("#tool-steps .tool-step").forEach((s) => {
+          s.classList.remove("active");
+          s.classList.add("done");
+        });
+
+        // Wait a brief moment for visual satisfaction
+        await new Promise((r) => setTimeout(r, 600));
+
+        // Populate results
+        renderResults(data);
+
+        // Show output, hide loading
+        loadingSection.classList.add("hidden");
+        outputSection.classList.remove("hidden");
+        outputSection.scrollIntoView({ behavior: "smooth", block: "start" });
+
+        showToast("Action plan generated successfully!", "success");
+
+        // Refresh memory indicator
+        checkMemory();
+
+      } catch (err) {
+        abortController.abort();
+        loadingSection.classList.add("hidden");
+        showToast(err.message || "Failed to connect to backend.", "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = "⚡ Generate Action Plan";
+      }
+    }
+
+    /**
+     * Populate all result cards with API response data.
+     */
+    function renderResults(data) {
+      // Summary
+      document.getElementById("summary-text").textContent = data.summary || "No summary available.";
+      const memBadge = document.getElementById("memory-badge");
+      if (data.memory_used) {
+        memBadge.classList.remove("hidden");
+      } else {
+        memBadge.classList.add("hidden");
+      }
+
+      // Tasks
+      const tasksBody = document.getElementById("tasks-body");
+      tasksBody.innerHTML = "";
+      const tasks = data.tasks || [];
+      const assignedData = data.assigned || [];
+      document.getElementById("task-count").textContent = `${tasks.length} item${tasks.length !== 1 ? "s" : ""}`;
+      tasks.forEach((t, i) => {
+        const owner = resolveTaskOwner(t.task, assignedData);
+        const tr = document.createElement("tr");
+        tr.className = "border-b border-white/5 last:border-0";
+        tr.innerHTML = `
+          <td class="py-3 text-gray-500 pr-3">${i + 1}</td>
+          <td class="py-3 text-gray-200">${escapeHtml(t.task)}</td>
+          <td class="py-3 text-gray-300">${escapeHtml(owner)}</td>
+          <td class="py-3 text-right"><span class="${getPriorityClass(t.priority)} text-xs font-semibold px-2.5 py-1 rounded-full">${escapeHtml(t.priority)}</span></td>
+        `;
+        tasksBody.appendChild(tr);
+      });
+
+      // Deadlines
+      const deadlinesBody = document.getElementById("deadlines-body");
+      deadlinesBody.innerHTML = "";
+      (data.deadlines || []).forEach((d) => {
+        const tr = document.createElement("tr");
+        tr.className = "border-b border-white/5 last:border-0";
+        tr.innerHTML = `
+          <td class="py-3 text-gray-200">${escapeHtml(d.item)}</td>
+          <td class="py-3 text-gray-400">${escapeHtml(d.deadline)}</td>
+          <td class="py-3 text-right"><span class="${getUrgencyClass(d.urgency)} text-xs font-semibold px-2.5 py-1 rounded-full">${escapeHtml(d.urgency)}</span></td>
+        `;
+        deadlinesBody.appendChild(tr);
+      });
+
+      // Assignments
+      const assignedList = document.getElementById("assigned-list");
+      assignedList.innerHTML = "";
+      (data.assigned || []).forEach((a) => {
+        const color = getAvatarColor(a.person);
+        const initial = (a.person || "?").charAt(0).toUpperCase();
+        const card = document.createElement("div");
+        card.className = "flex items-start gap-3 bg-input border border-white/5 rounded-xl p-4";
+        card.innerHTML = `
+          <div class="w-10 h-10 rounded-full flex items-center justify-center text-base font-bold text-white shrink-0" style="background:${color}20; color:${color}; border: 1px solid ${color}44;">
+            ${initial}
+          </div>
+          <div class="min-w-0">
+            <p class="font-semibold text-white text-sm">${escapeHtml(a.person)}</p>
+            <p class="text-gray-400 text-xs mt-0.5">${escapeHtml(a.responsibility)}</p>
+            <p class="text-gray-500 text-xs mt-1">→ ${escapeHtml(a.task)}</p>
+          </div>
+        `;
+        assignedList.appendChild(card);
+      });
+
+      // Email
+      document.getElementById("email-text").textContent = data.email || "No email generated.";
+      // Reset copy button
+      document.getElementById("copy-btn-text").textContent = "Copy Email";
+
+      // Populate owner filter dropdown using the same owner resolution as the task table
+      populateOwnerFilter(data.assigned || [], data.tasks || []);
+
+      // Store original data for filtering
+      window.allTasksData = data.tasks || [];
+      window.allAssignedData = data.assigned || [];
+
+      // Initialize tabs - show summary by default
+      switchTab('summary');
+    }
+
+    /**
+     * Populate the owner dropdown with unique assignees.
+     */
+    function populateOwnerFilter(assigned, tasks = []) {
+      const ownerFilter = document.getElementById("owner-filter");
+      const resolvedOwners = tasks.map((t) => resolveTaskOwner(t.task, assigned)).filter(Boolean);
+      const owners = [...new Set(resolvedOwners)].sort();
+      
+      // Keep the "All Owners" option and add unique owners
+      const existingValue = ownerFilter.value;
+      ownerFilter.innerHTML = '<option value="">All Owners</option>';
+      owners.forEach(owner => {
+        const option = document.createElement("option");
+        option.value = owner;
+        option.textContent = owner;
+        ownerFilter.appendChild(option);
+      });
+      ownerFilter.value = existingValue;
+    }
+
+    /**
+     * Filter tasks based on search, priority, and owner.
+     */
+    function filterTasks() {
+      const searchTerm = document.getElementById("task-search").value.toLowerCase();
+      const priorityFilter = document.getElementById("priority-filter").value;
+      const ownerFilter = document.getElementById("owner-filter").value;
+      const tasksBody = document.getElementById("tasks-body");
+
+      // Filter tasks
+      const filteredTasks = (window.allTasksData || []).filter(task => {
+        const matchesSearch = task.task.toLowerCase().includes(searchTerm);
+        const matchesPriority = !priorityFilter || task.priority === priorityFilter;
+
+        // Find owner for this task
+        const owner = resolveTaskOwner(task.task, window.allAssignedData || []);
+        const matchesOwner = !ownerFilter || owner === ownerFilter;
+        
+        return matchesSearch && matchesPriority && matchesOwner;
+      });
+
+      // Render filtered tasks
+      tasksBody.innerHTML = "";
+      filteredTasks.forEach((task, i) => {
+        const owner = resolveTaskOwner(task.task, window.allAssignedData || []);
+
+        const tr = document.createElement("tr");
+        tr.className = "border-b border-white/5 last:border-0";
+        tr.innerHTML = `
+          <td class="py-3 text-gray-500 pr-3">${(window.allTasksData || []).indexOf(task) + 1}</td>
+          <td class="py-3 text-gray-200">${escapeHtml(task.task)}</td>
+          <td class="py-3 text-gray-300">${escapeHtml(owner)}</td>
+          <td class="py-3 text-right"><span class="${getPriorityClass(task.priority)} text-xs font-semibold px-2.5 py-1 rounded-full">${escapeHtml(task.priority)}</span></td>
+        `;
+        tasksBody.appendChild(tr);
+      });
+
+      // Update task count
+      document.getElementById("task-count").textContent = `${filteredTasks.length} item${filteredTasks.length !== 1 ? "s" : ""}`;
+    }
+
+    /**
+     * Normalize strings for task-owner matching.
+     */
+    function normalizeForMatch(value) {
+      return String(value || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    /**
+     * Tokenize text and remove high-frequency filler words.
+     */
+    function tokenizeForMatch(value) {
+      const stopWords = new Set([
+        "the", "a", "an", "to", "by", "for", "of", "and", "on", "in", "with",
+        "is", "are", "will", "should", "must", "need", "needs", "from", "team"
+      ]);
+      return normalizeForMatch(value)
+        .split(" ")
+        .filter(token => token && token.length > 2 && !stopWords.has(token));
+    }
+
+    /**
+     * Resolve the best owner for a task by fuzzy matching against assignment task/responsibility.
+     */
+    function resolveTaskOwner(taskText, assignedData) {
+      const taskNorm = normalizeForMatch(taskText);
+      const taskTokens = tokenizeForMatch(taskText);
+
+      if (!taskNorm || !Array.isArray(assignedData) || assignedData.length === 0) {
+        return "Team";
+      }
+
+      let bestOwner = "Team";
+      let bestScore = 0;
+
+      assignedData.forEach((assignment) => {
+        const person = String(assignment?.person || "").trim();
+        if (!person || person.toLowerCase() === "unassigned") {
+          return;
+        }
+
+        const sourceText = [assignment?.task, assignment?.responsibility].filter(Boolean).join(" ");
+        const sourceNorm = normalizeForMatch(sourceText);
+        if (!sourceNorm) {
+          return;
+        }
+
+        let score = 0;
+
+        // Strong signal for direct phrase overlap.
+        if (sourceNorm.includes(taskNorm) || taskNorm.includes(sourceNorm)) {
+          score += 3;
+        }
+
+        // Secondary signal from token overlap.
+        const sourceTokenSet = new Set(tokenizeForMatch(sourceText));
+        let overlap = 0;
+        taskTokens.forEach((token) => {
+          if (sourceTokenSet.has(token)) {
+            overlap += 1;
+          }
+        });
+        if (taskTokens.length > 0) {
+          score += overlap / taskTokens.length;
+        }
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestOwner = person;
+        }
+      });
+
+      return bestScore >= 0.4 ? bestOwner : "Team";
+    }
+
+    /**
+     * Clear all task filters.
+     */
+    function clearFilters() {
+      document.getElementById("task-search").value = "";
+      document.getElementById("priority-filter").value = "";
+      document.getElementById("owner-filter").value = "";
+      filterTasks();
+    }
+
+    /**
+     * Copy the follow-up email text to clipboard.
+     */
+    async function copyEmail() {
+      const emailText = document.getElementById("email-text").textContent;
+      try {
+        await navigator.clipboard.writeText(emailText);
+        const btnText = document.getElementById("copy-btn-text");
+        btnText.textContent = "✓ Copied!";
+        setTimeout(() => { btnText.textContent = "Copy Email"; }, 2000);
+      } catch {
+        showToast("Failed to copy email.", "error");
+      }
+    }
+
+    /**
+     * Clear session memory on the backend.
+     */
+    async function clearMemory() {
+      try {
+        const res = await fetch(`${API_BASE}/memory`, { method: "DELETE" });
+        if (!res.ok) throw new Error("Clear failed");
+        showToast("Session memory cleared.", "success");
+        checkMemory();
+      } catch (e) {
+        showToast("Failed to clear memory.", "error");
+      }
+    }
+
+    /**
+     * Reset the UI to accept new input.
+     */
+    function resetAll() {
+      document.getElementById("meeting-notes").value = "";
+      document.getElementById("output-section").classList.add("hidden");
+      document.getElementById("input-section").scrollIntoView({ behavior: "smooth" });
+      resetPipelineSteps();
+    }
+
+    /**
+     * Show the memory modal with stored meetings.
+     */
+    async function showMemoryModal() {
+      const modal = document.getElementById("memory-modal");
+      const content = document.getElementById("memory-modal-content");
+      modal.classList.remove("hidden");
+
+      try {
+        const res = await fetch(`${API_BASE}/memory`);
+        const data = await res.json();
+        const meetings = data.meetings || [];
+
+        if (meetings.length === 0) {
+          content.innerHTML = `
+            <div class="text-center py-8">
+              <svg class="w-12 h-12 mx-auto text-gray-700 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
+              <p class="text-gray-500 text-sm">No meetings stored in memory yet.</p>
+              <p class="text-gray-600 text-xs mt-1">Process your first meeting to start building context.</p>
+            </div>
+          `;
+        } else {
+          content.innerHTML = meetings.map((m, i) => `
+            <div class="bg-input border border-white/5 rounded-xl p-5">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-accent">Meeting ${i + 1}</span>
+                <span class="text-xs text-gray-600">${new Date(m.timestamp).toLocaleString()}</span>
+              </div>
+              <p class="text-sm text-gray-300 mb-2">${escapeHtml(m.summary || "No summary")}</p>
+              <div class="flex items-center gap-3 text-xs text-gray-500">
+                <span>${m.task_count || 0} action items</span>
+                <span>·</span>
+                <span class="truncate max-w-xs">${escapeHtml((m.notes || "").substring(0, 100))}…</span>
+              </div>
+            </div>
+          `).join("");
+        }
+      } catch {
+        content.innerHTML = `<p class="text-gray-500 text-sm">Failed to load memory. Is the backend running?</p>`;
+      }
+    }
+
+    /**
+     * Close the memory modal.
+     */
+    function closeMemoryModal() {
+      document.getElementById("memory-modal").classList.add("hidden");
+    }
+
+    /**
+     * Show the analytics dashboard.
+     */
+    async function showAnalyticsDashboard() {
+      try {
+        const modal = document.getElementById("analytics-modal");
+        modal.classList.remove("hidden");
+        
+        // Fetch memory data
+        const res = await fetch(`${API_BASE}/memory`);
+        if (!res.ok) throw new Error("Failed to fetch memory");
+        const memoryData = await res.json();
+        
+        // Process analytics
+        generateAnalytics(memoryData);
+      } catch (e) {
+        showToast("Failed to load analytics: " + e.message, "error");
+      }
+    }
+
+    /**
+     * Close the analytics modal.
+     */
+    function closeAnalyticsDashboard() {
+      document.getElementById("analytics-modal").classList.add("hidden");
+    }
+
+    /**
+     * Generate and display analytics from memory data.
+     */
+    function generateAnalytics(memoryData) {
+      // Extract all tasks, deadlines, and assignments from all meetings
+      const allTasks = [];
+      const allDeadlines = [];
+      const allAssignments = [];
+      const meetings = memoryData.meetings || [];
+
+      meetings.forEach(meeting => {
+        if (meeting.data) {
+          allTasks.push(...(meeting.data.tasks || []));
+          allDeadlines.push(...(meeting.data.deadlines || []));
+          allAssignments.push(...(meeting.data.assigned || []));
+        }
+      });
+
+      // Calculate metrics
+      const totalMeetings = meetings.length;
+      const avgTasks = totalMeetings > 0 ? Math.round((allTasks.length / totalMeetings) * 10) / 10 : 0;
+      const topAssignee = getTopAssignee(allAssignments);
+
+      // Update metric cards
+      document.getElementById("metric-meetings").textContent = totalMeetings;
+      document.getElementById("metric-avg-tasks").textContent = avgTasks;
+      document.getElementById("metric-total-tasks").textContent = allTasks.length;
+      document.getElementById("metric-top-assignee").textContent = topAssignee || "-";
+
+      // Priority distribution
+      const priorityCounts = { "High": 0, "Medium": 0, "Low": 0 };
+      allTasks.forEach(task => {
+        const priority = task.priority || "Medium";
+        priorityCounts[priority] = (priorityCounts[priority] || 0) + 1;
+      });
+      drawPriorityChart(priorityCounts);
+
+      // Urgency distribution
+      const urgencyCounts = { "Immediate": 0, "Soon": 0, "Flexible": 0 };
+      allDeadlines.forEach(deadline => {
+        const urgency = deadline.urgency || "Flexible";
+        urgencyCounts[urgency] = (urgencyCounts[urgency] || 0) + 1;
+      });
+      drawUrgencyChart(urgencyCounts);
+
+      // Assignee frequency
+      drawAssigneeChart(allAssignments);
+
+      // Meeting timeline
+      renderTimeline(meetings);
+    }
+
+    /**
+     * Get the person with the most assignments.
+     */
+    function getTopAssignee(assignments) {
+      const counts = {};
+      assignments.forEach(a => {
+        counts[a.person] = (counts[a.person] || 0) + 1;
+      });
+      let top = null;
+      let maxCount = 0;
+      for (const [person, count] of Object.entries(counts)) {
+        if (count > maxCount) {
+          maxCount = count;
+          top = person;
+        }
+      }
+      return top;
+    }
+
+    /**
+     * Draw priority distribution pie chart.
+     */
+    function drawPriorityChart(priorityCounts) {
+      const ctx = document.getElementById("priority-chart").getContext("2d");
+      if (window.priorityChartInstance) {
+        window.priorityChartInstance.destroy();
+      }
+      window.priorityChartInstance = new Chart(ctx, {
+        type: "doughnut",
+        data: {
+          labels: ["High", "Medium", "Low"],
+          datasets: [{
+            data: [priorityCounts["High"], priorityCounts["Medium"], priorityCounts["Low"]],
+            backgroundColor: ["#ef4444", "#f97316", "#eab308"],
+            borderColor: ["#dc2626", "#ea580c", "#ca8a04"],
+            borderWidth: 1,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              labels: { color: "#d1d5db", font: { size: 12 } },
+            },
+          },
+        },
+      });
+    }
+
+    /**
+     * Draw urgency distribution pie chart.
+     */
+    function drawUrgencyChart(urgencyCounts) {
+      const ctx = document.getElementById("urgency-chart").getContext("2d");
+      if (window.urgencyChartInstance) {
+        window.urgencyChartInstance.destroy();
+      }
+      window.urgencyChartInstance = new Chart(ctx, {
+        type: "doughnut",
+        data: {
+          labels: ["Immediate", "Soon", "Flexible"],
+          datasets: [{
+            data: [urgencyCounts["Immediate"], urgencyCounts["Soon"], urgencyCounts["Flexible"]],
+            backgroundColor: ["#ef4444", "#f97316", "#22c55e"],
+            borderColor: ["#dc2626", "#ea580c", "#16a34a"],
+            borderWidth: 1,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              labels: { color: "#d1d5db", font: { size: 12 } },
+            },
+          },
+        },
+      });
+    }
+
+    /**
+     * Draw top assignees bar chart.
+     */
+    function drawAssigneeChart(assignments) {
+      const counts = {};
+      assignments.forEach(a => {
+        counts[a.person] = (counts[a.person] || 0) + 1;
+      });
+      
+      // Get top 8 assignees
+      const sorted = Object.entries(counts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8);
+      
+      const labels = sorted.map(e => e[0]);
+      const data = sorted.map(e => e[1]);
+      
+      const ctx = document.getElementById("assignee-chart").getContext("2d");
+      if (window.assigneeChartInstance) {
+        window.assigneeChartInstance.destroy();
+      }
+      window.assigneeChartInstance = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [{
+            label: "Tasks Assigned",
+            data: data,
+            backgroundColor: "#f97316",
+            borderColor: "#ea580c",
+            borderWidth: 1,
+            borderRadius: 4,
+          }],
+        },
+        options: {
+          indexAxis: "y",
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              labels: { color: "#d1d5db" },
+            },
+          },
+          scales: {
+            x: {
+              ticks: { color: "#9ca3af" },
+              grid: { color: "#ffffff0a" },
+            },
+            y: {
+              ticks: { color: "#9ca3af" },
+              grid: { color: "#ffffff0a" },
+            },
+          },
+        },
+      });
+    }
+
+    /**
+     * Render meeting timeline.
+     */
+    function renderTimeline(meetings) {
+      const list = document.getElementById("timeline-list");
+      if (meetings.length === 0) {
+        list.innerHTML = '<p class="text-gray-500 text-sm">No meetings yet</p>';
+        return;
+      }
+      
+      list.innerHTML = meetings
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .map((meeting, i) => {
+          const date = new Date(meeting.timestamp).toLocaleDateString('en-US', {
+            month: 'short', day: 'numeric', year: 'numeric'
+          });
+          const taskCount = (meeting.data?.tasks || []).length;
+          return `
+            <div class="flex items-center justify-between bg-input border border-white/5 rounded-lg p-3 text-sm">
+              <div>
+                <p class="text-gray-300 font-semibold">${escapeHtml(meeting.summary?.substring(0, 50) || 'Meeting ' + (i + 1))}</p>
+                <p class="text-gray-500 text-xs mt-1">${date}</p>
+              </div>
+              <span class="text-accent font-bold text-lg">${taskCount}</span>
+            </div>
+          `;
+        })
+        .join('');
+    }
+
+    /**
+     * Export action plan as PDF.
+     */
+    async function exportPDF() {
+      try {
+        // Collect current result data from page
+        const summary = document.getElementById("summary-text").textContent;
+        const tasks = [];
+        const assignedList = document.getElementById("assigned-list");
+        
+        // Get tasks from table
+        const taskRows = document.querySelectorAll("#tasks-body tr");
+        taskRows.forEach(row => {
+          const cells = row.cells;
+          if (cells.length >= 4) {
+            tasks.push({
+              task: cells[1].textContent.trim(),
+              priority: cells[3].textContent.trim()
+            });
+          }
+        });
+        
+        // Get deadlines
+        const deadlines = [];
+        const deadlineRows = document.querySelectorAll("#deadlines-body tr");
+        deadlineRows.forEach(row => {
+          const cells = row.cells;
+          if (cells.length >= 3) {
+            deadlines.push({
+              item: cells[0].textContent.trim(),
+              deadline: cells[1].textContent.trim(),
+              urgency: cells[2].textContent.trim()
+            });
+          }
+        });
+        
+        // Get assignments
+        const assigned = [];
+        const assignmentCards = document.querySelectorAll("#assigned-list .flex");
+        assignmentCards.forEach(card => {
+          const person = card.querySelector("p")?.textContent.trim() || "";
+          const responsibility = card.querySelectorAll("p")[1]?.textContent.trim() || "";
+          const task = card.querySelectorAll("p")[2]?.textContent.replace("→ ", "").trim() || "";
+          assigned.push({ person, responsibility, task });
+        });
+        
+        const email = document.getElementById("email-text").textContent;
+        const meetingDate = document.getElementById("meeting-date").value;
+        
+        // Send to backend
+        const res = await fetch(`${API_BASE}/export/pdf`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            data: { summary, tasks, deadlines, assigned, email },
+            meeting_date: meetingDate
+          })
+        });
+        
+        if (!res.ok) throw new Error("Export failed");
+        
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `action-plan-${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        showToast("✓ PDF exported successfully!", "success");
+      } catch (e) {
+        showToast(e.message || "Failed to export PDF", "error");
+      }
+    }
+
+    /**
+     * Export action plan as CSV.
+     */
+    async function exportCSV() {
+      try {
+        // Collect current result data from page
+        const summary = document.getElementById("summary-text").textContent;
+        const tasks = [];
+        
+        // Get tasks from table
+        const taskRows = document.querySelectorAll("#tasks-body tr");
+        taskRows.forEach(row => {
+          const cells = row.cells;
+          if (cells.length >= 4) {
+            tasks.push({
+              task: cells[1].textContent.trim(),
+              priority: cells[3].textContent.trim()
+            });
+          }
+        });
+        
+        // Get deadlines
+        const deadlines = [];
+        const deadlineRows = document.querySelectorAll("#deadlines-body tr");
+        deadlineRows.forEach(row => {
+          const cells = row.cells;
+          if (cells.length >= 3) {
+            deadlines.push({
+              item: cells[0].textContent.trim(),
+              deadline: cells[1].textContent.trim(),
+              urgency: cells[2].textContent.trim()
+            });
+          }
+        });
+        
+        // Get assignments
+        const assigned = [];
+        const assignmentCards = document.querySelectorAll("#assigned-list .flex");
+        assignmentCards.forEach(card => {
+          const person = card.querySelector("p")?.textContent.trim() || "";
+          const responsibility = card.querySelectorAll("p")[1]?.textContent.trim() || "";
+          const task = card.querySelectorAll("p")[2]?.textContent.replace("→ ", "").trim() || "";
+          assigned.push({ person, responsibility, task });
+        });
+        
+        const email = document.getElementById("email-text").textContent;
+        const meetingDate = document.getElementById("meeting-date").value;
+        
+        // Send to backend
+        const res = await fetch(`${API_BASE}/export/csv`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            data: { summary, tasks, deadlines, assigned, email },
+            meeting_date: meetingDate
+          })
+        });
+        
+        if (!res.ok) throw new Error("Export failed");
+        
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `action-plan-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        showToast("✓ CSV exported successfully!", "success");
+      } catch (e) {
+        showToast(e.message || "Failed to export CSV", "error");
+      }
+    }
+
+    // Close modal on backdrop click
+    document.getElementById("memory-modal").addEventListener("click", (e) => {
+      if (e.target === e.currentTarget) closeMemoryModal();
+    });
+
+    // Close modal on Escape key
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeMemoryModal();
+    });
+
+    // Close analytics modal on backdrop click
+    document.getElementById("analytics-modal").addEventListener("click", (e) => {
+      if (e.target === e.currentTarget) closeAnalyticsDashboard();
+    });
+
+    // Close analytics modal on Escape key (but only if analytics modal is visible)
+    const originalKeydownHandler = document.onkeydown;
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        const analyticsModal = document.getElementById("analytics-modal");
+        if (analyticsModal && !analyticsModal.classList.contains("hidden")) {
+          closeAnalyticsDashboard();
+        }
+      }
+    });
+
+    /**
+     * Escape HTML to prevent XSS.
+     */
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text || "";
+      return div.innerHTML;
+    }
+
+    /**
+     * Handle audio file drop on the dropzone.
+     */
+    function handleAudioDrop(event) {
+      event.preventDefault();
+      const dropzone = document.getElementById("audio-dropzone");
+      dropzone.classList.remove("border-orange-500/50", "bg-orange-500/5");
+      
+      const files = event.dataTransfer.files;
+      if (files.length > 0) {
+        const file = files[0];
+        if (file.type.startsWith("audio/")) {
+          processAudioFile(file);
+        } else {
+          showToast("Please drop an audio file.", "error");
+        }
+      }
+    }
+
+    /**
+     * Handle audio drag over.
+     */
+    function handleAudioDragOver(event) {
+      event.preventDefault();
+      document.getElementById("audio-dropzone").classList.add("border-orange-500/50", "bg-orange-500/5");
+    }
+
+    /**
+     * Handle audio drag leave.
+     */
+    function handleAudioDragLeave(event) {
+      event.preventDefault();
+      document.getElementById("audio-dropzone").classList.remove("border-orange-500/50", "bg-orange-500/5");
+    }
+
+    /**
+     * Handle audio file selection from input.
+     */
+    function handleAudioUpload(event) {
+      const files = event.target.files;
+      if (files.length > 0) {
+        processAudioFile(files[0]);
+      }
+    }
+
+    /**
+     * Process the selected audio file by uploading to transcription endpoint.
+     */
+    async function processAudioFile(file) {
+      const status = document.getElementById("audio-status");
+      const dropzone = document.getElementById("audio-dropzone");
+
+      // Validate file size (max 25MB for Whisper)
+      const maxSize = 25 * 1024 * 1024;
+      if (file.size > maxSize) {
+        showToast("Audio file must be smaller than 25MB.", "error");
+        return;
+      }
+
+      try {
+        status.textContent = "📤 Uploading...";
+        dropzone.style.opacity = "0.5";
+
+        // Create FormData for file upload
+        const formData = new FormData();
+        formData.append("file", file);
+
+        // Upload to backend transcription endpoint
+        const res = await fetch(`${API_BASE}/transcribe_audio`, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ detail: "Unknown error" }));
+          throw new Error(err.detail || `Server error: ${res.status}`);
+        }
+
+        const data = await res.json();
+        
+        // Populate the meeting notes textarea with transcribed text
+        const notesTextarea = document.getElementById("meeting-notes");
+        notesTextarea.value = data.text;
+        
+        status.textContent = `✓ Transcribed "${escapeHtml(file.name)}"`;
+        status.style.color = "#4ade80";
+        
+        showToast("Audio transcribed successfully!", "success");
+        
+        // Reset after 3 seconds
+        setTimeout(() => {
+          status.textContent = "";
+          status.style.color = "";
+          dropzone.style.opacity = "1";
+          document.getElementById("audio-input").value = "";
+        }, 3000);
+
+      } catch (err) {
+        showToast(err.message || "Failed to transcribe audio.", "error");
+        status.textContent = "";
+        dropzone.style.opacity = "1";
+        document.getElementById("audio-input").value = "";
+      }
+    }
+
+    /**
+     * User Authentication & Collaboration Functions
+     */
+
+    /**
+     * Store current user in local storage.
+     */
+    function setCurrentUser(userId, email, username) {
+      localStorage.setItem("currentUser", JSON.stringify({ userId, email, username }));
+      updateUserUI();
+    }
+
+    /**
+     * Get current user from local storage.
+     */
+    function getCurrentUser() {
+      const stored = localStorage.getItem("currentUser");
+      return stored ? JSON.parse(stored) : null;
+    }
+
+    /**
+     * Update UI based on user authentication status.
+     */
+    function updateUserUI() {
+      const user = getCurrentUser();
+      const authButtons = document.getElementById("auth-buttons");
+      const userInfo = document.getElementById("user-info");
+      const userName = document.getElementById("user-name");
+
+      if (user) {
+        authButtons.classList.add("hidden");
+        userInfo.classList.remove("hidden");
+        userName.textContent = `${user.username}`;
+      } else {
+        authButtons.classList.remove("hidden");
+        userInfo.classList.add("hidden");
+      }
+    }
+
+    /**
+     * Show authentication modal.
+     */
+    function showAuthModal(mode) {
+      const modal = document.getElementById("auth-modal");
+      const title = document.getElementById("auth-title");
+      const loginForm = document.getElementById("login-form");
+      const registerForm = document.getElementById("register-form");
+
+      modal.classList.remove("hidden");
+      
+      if (mode === "login") {
+        title.textContent = "Login";
+        loginForm.classList.remove("hidden");
+        registerForm.classList.add("hidden");
+      } else {
+        title.textContent = "Register";
+        loginForm.classList.add("hidden");
+        registerForm.classList.remove("hidden");
+      }
+    }
+
+    /**
+     * Close authentication modal.
+     */
+    function closeAuthModal() {
+      document.getElementById("auth-modal").classList.add("hidden");
+    }
+
+    /**
+     * Toggle between login and register forms.
+     */
+    function toggleAuthMode() {
+      const loginForm = document.getElementById("login-form");
+      const registerForm = document.getElementById("register-form");
+      
+      if (loginForm.classList.contains("hidden")) {
+        loginForm.classList.remove("hidden");
+        registerForm.classList.add("hidden");
+        document.getElementById("auth-title").textContent = "Login";
+      } else {
+        loginForm.classList.add("hidden");
+        registerForm.classList.remove("hidden");
+        document.getElementById("auth-title").textContent = "Register";
+      }
+    }
+
+    /**
+     * Register a new user.
+     */
+    async function registerUser() {
+      const email = document.getElementById("register-email").value.trim();
+      const username = document.getElementById("register-username").value.trim();
+      const password = document.getElementById("register-password").value;
+
+      if (!email || !username || !password) {
+        showToast("Please fill in all fields.", "error");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/auth/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, username, password }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ detail: "Unknown error" }));
+          throw new Error(err.detail || `Registration failed: ${res.status}`);
+        }
+
+        const data = await res.json();
+        setCurrentUser(data.user_id, data.email, data.username);
+        closeAuthModal();
+        showToast("Account created successfully!", "success");
+      } catch (err) {
+        showToast(err.message || "Registration failed.", "error");
+      }
+    }
+
+    /**
+     * Login user.
+     */
+    async function loginUser() {
+      const email = document.getElementById("login-email").value.trim();
+      const password = document.getElementById("login-password").value;
+
+      if (!email || !password) {
+        showToast("Please enter email and password.", "error");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ detail: "Unknown error" }));
+          throw new Error(err.detail || `Login failed: ${res.status}`);
+        }
+
+        const data = await res.json();
+        setCurrentUser(data.user_id, data.email, data.username);
+        closeAuthModal();
+        showToast("Logged in successfully!", "success");
+      } catch (err) {
+        showToast(err.message || "Login failed.", "error");
+      }
+    }
+
+    /**
+     * Logout user.
+     */
+    function logoutUser() {
+      localStorage.removeItem("currentUser");
+      updateUserUI();
+      showToast("Logged out successfully!", "success");
+    }
+
+    // ── Initialize ──
+    /**
+     * Switch between result tabs.
+     */
+    function switchTab(tabName) {
+      // Map tab names to card IDs
+      const tabToIdMap = {
+        'summary': 'card-summary',
+        'tasks': 'card-tasks',
+        'deadlines': 'card-deadlines',
+        'assigned': 'card-assigned',
+        'email': 'card-email'
+      };
+
+      // Hide all tab contents by ID
+      const allIds = ['card-summary', 'card-tasks', 'card-deadlines', 'card-assigned', 'card-email'];
+      allIds.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+          element.style.setProperty('display', 'none', 'important');
+          element.style.setProperty('opacity', '0', 'important');
+        }
+      });
+
+      // Show selected tab content by ID
+      const selectedId = tabToIdMap[tabName];
+      if (selectedId) {
+        const selectedElement = document.getElementById(selectedId);
+        if (selectedElement) {
+          selectedElement.style.setProperty('display', 'block', 'important');
+          selectedElement.style.setProperty('opacity', '1', 'important');
+        }
+      }
+
+      // Update tab button styling
+      const allTabs = document.querySelectorAll(".result-tab");
+      allTabs.forEach(tab => {
+        if (tab.getAttribute("data-tab") === tabName) {
+          tab.classList.add("text-white", "border-accent");
+          tab.classList.remove("text-gray-400", "border-transparent");
+        } else {
+          tab.classList.remove("text-white", "border-accent");
+          tab.classList.add("text-gray-400", "border-transparent");
+        }
+      });
+    }
+
+    // Check memory status on page load
+    checkMemory();
+
+    // Check user authentication status
+    updateUserUI();
+
+    // Set default date to today
+    document.getElementById("meeting-date").valueAsDate = new Date();
+  </script>
+
+</body>
+</html>
