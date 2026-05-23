@@ -662,7 +662,7 @@ Weekly sync April 18 2026. Ravi to finalize Q2 proposal ASAP. Priya needs demo e
   <!-- ══════════════════════════════════════════════════════════════ -->
   <script>
     // ── Config ──
-    const API_BASE = "http://localhost:8000";
+    const API_BASE = "/.netlify/functions";
 
     // ── Avatar color palette ──
     const AVATAR_COLORS = ["#f97316", "#8b5cf6", "#06b6d4", "#ec4899", "#22c55e", "#eab308", "#3b82f6", "#ef4444"];
@@ -1541,7 +1541,7 @@ Weekly sync April 18 2026. Ravi to finalize Q2 proposal ASAP. Priya needs demo e
         const meetingDate = document.getElementById("meeting-date").value;
         
         // Send to backend
-        const res = await fetch(`${API_BASE}/export/pdf`, {
+        const res = await fetch(`${API_BASE}/export_pdf`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -1617,7 +1617,7 @@ Weekly sync April 18 2026. Ravi to finalize Q2 proposal ASAP. Priya needs demo e
         const meetingDate = document.getElementById("meeting-date").value;
         
         // Send to backend
-        const res = await fetch(`${API_BASE}/export/csv`, {
+        const res = await fetch(`${API_BASE}/export_csv`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -1884,7 +1884,7 @@ Weekly sync April 18 2026. Ravi to finalize Q2 proposal ASAP. Priya needs demo e
       }
 
       try {
-        const res = await fetch(`${API_BASE}/auth/register`, {
+        const res = await fetch(`${API_BASE}/auth_register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, username, password }),
@@ -1917,7 +1917,7 @@ Weekly sync April 18 2026. Ravi to finalize Q2 proposal ASAP. Priya needs demo e
       }
 
       try {
-        const res = await fetch(`${API_BASE}/auth/login`, {
+        const res = await fetch(`${API_BASE}/auth_login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
