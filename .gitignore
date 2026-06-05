@@ -1,6 +1,26 @@
+# Environment variables (secrets)
+.env
+backend/.env
+
+# Python
 .venv/
+venv/
 backend/venv/
 backend/__pycache__/
-backend/.env
-backend/data/
+__pycache__/
+*.pyc
+
+# Node
 node_modules/
+package-lock.json
+
+# Data
+backend/data/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
